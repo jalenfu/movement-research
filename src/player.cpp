@@ -7,6 +7,12 @@ Player::Player()
 
     velX = 0;
     velY = 0;
+
+    accelX = 0;
+    accelY = 0;
+
+    maxVelX = 10;
+    maxVelY = 10;
     
     gravity = 0.23;
     width = 20;
@@ -29,11 +35,11 @@ void Player::handleEvent(SDL_Event& e)
         switch( e.key.keysym.sym )
         {
             case SDLK_a: 
-                velX -= 5;
+                accelX = -0.6;
                 facingRight = false;
                 break;
             case SDLK_d: 
-                velX += 5;
+                accelX = 0.6;
                 facingRight = true;
                 break;
             case SDLK_SPACE: 
@@ -43,11 +49,11 @@ void Player::handleEvent(SDL_Event& e)
                 state = dash;
                 if (facingRight)
                 {
-                    velX += 15;
+                    velX += 10;
                 }
                 else
                 {
-                    velX -= 15;
+                    velX -= 10;
                 }
                 break;
         }
@@ -56,8 +62,8 @@ void Player::handleEvent(SDL_Event& e)
     {
         switch( e.key.keysym.sym )
         {
-            case SDLK_a: velX += 5; break;
-            case SDLK_d: velX -= 5; break;
+            case SDLK_a:
+            case SDLK_d: accelX = 0; break;
         }
     }
 }

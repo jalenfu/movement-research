@@ -1,15 +1,20 @@
 #include "entity.hpp"
 #include "library.hpp"
 #include <iostream>
+// #include <stdlib.h>
 
 void Entity::update()
 { 
-    posX += velX;
-
-    if (posY > 400)
+    velX += accelX;
+    if (velX > maxVelX)
     {
-        velX = 0;
+        velX = maxVelX;
     }
+    if (velX * -1 > maxVelX)
+    {
+        velX = -1 * maxVelX;
+    }
+    posX += velX;
 
     if( ( posX < 0 ) || ( posX + width > SCREEN_WIDTH ) )
     {
@@ -18,7 +23,7 @@ void Entity::update()
 
     posY += velY;
 
-    if (posY + height < SCREEN_HEIGHT)
+    if (posY + height <= SCREEN_HEIGHT)
     {
         velY += gravity;
     }

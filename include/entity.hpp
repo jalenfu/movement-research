@@ -18,6 +18,8 @@ protected:
     double gravity;
     int posX, posY;
     double velX, velY;
+    double accelX, accelY;
+    double maxVelX, maxVelY;
     int width, height;
     EntityState state;
     LTexture texture;
