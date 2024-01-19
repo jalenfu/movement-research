@@ -10,6 +10,7 @@ and may not be redistributed without written permission.*/
 #include "dot.hpp"
 #include "ltimer.hpp"
 #include "player.hpp"
+#include "keyboard_handler.hpp"
 
 int main( int argc, char* args[] )
 {
@@ -32,6 +33,7 @@ int main( int argc, char* args[] )
 
 			//Event handler
 			SDL_Event e;
+			KeyboardHandler keyboardHandler;
 
 			Player player;
 
@@ -52,10 +54,11 @@ int main( int argc, char* args[] )
 					}
 
 					//Handle input for the dot
-					player.handleEvent( e );
+					keyboardHandler.handleKeyboardEvent(e);
 				}
 
 				//Move the dot
+				player.handleEvent(keyboardHandler);
 				player.update();
 
 				//Clear screen

@@ -19,7 +19,10 @@ Player::Player()
     height = 20;
 
     facingRight = true;
-
+    wasKeyPressed = {{SDLK_a, false},
+                     {SDLK_d, false},
+                     {SDLK_SPACE, false},
+                     {SDLK_LSHIFT, false}};
     texture.loadFromFile( "src/dot.bmp" );
 }
 
@@ -28,42 +31,49 @@ Player::~Player()
     texture.free();
 }
 
-void Player::handleEvent(SDL_Event& e)
+void Player::handleEvent(KeyboardHandler& k)
 {
-	if( e.type == SDL_KEYDOWN && e.key.repeat == 0 )
+	if (!k.isPressed(SDLK_a) || !k.isPressed(SDLK_d))
     {
-        switch( e.key.keysym.sym )
-        {
-            case SDLK_a: 
-                accelX = -0.6;
-                facingRight = false;
-                break;
-            case SDLK_d: 
-                accelX = 0.6;
-                facingRight = true;
-                break;
-            case SDLK_SPACE: 
-                velY -= 10; 
-                break;
-            case SDLK_LSHIFT:
-                state = dash;
-                if (facingRight)
-                {
-                    velX += 10;
-                }
-                else
-                {
-                    velX -= 10;
-                }
-                break;
-        }
+        accelX = 0;
     }
-    else if( e.type == SDL_KEYUP && e.key.repeat == 0 )
+    if (k.isPressed(SDLK_a) && k.isPressed(SDLK_d))
     {
-        switch( e.key.keysym.sym )
+        accelX = 0;
+    }
+    else if (k.isPressed(SDLK_a))
+    {
+        accelX = -0.6;
+        facingRight = false;
+    }
+    else if (k.isPressed(SDLK_d))
+    {
+        accelX = 0.6;
+        facingRight = true;
+    }
+    if (!wasKeyPressed[SDLK_SPACE] && k.isPressed(SDLK_SPACE))
+    {
+        velY -= 10;
+        wasKeyPressed[SDLK_SPACE] = true;
+    }
+    else if (!k.isPressed(SDLK_SPACE))
+    {
+        wasKeyPressed[SDLK_SPACE] = false;
+    }
+    if (!wasKeyPressed[SDLK_LSHIFT] && k.isPressed(SDLK_LSHIFT))
+    {
+        if (facingRight)
         {
-            case SDLK_a:
-            case SDLK_d: accelX = 0; break;
+            velX += 10;
         }
+        else
+        {
+            velX -= 10;
+        }
+        wasKeyPressed[SDLK_LSHIFT] = true;
+    }
+    else if (!k.isPressed(SDLK_LSHIFT))
+    {
+        wasKeyPressed[SDLK_LSHIFT] = false;
     }
 }
