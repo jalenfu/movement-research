@@ -1,21 +1,14 @@
 #pragma once
 #include <SDL.h>
+#include "entity.hpp"
 
-class Player
+class Player : virtual public Entity
 {
 public:
-    static const int PLAYER_WIDTH = 20;
-    static const int PLAYER_HEIGHT = 20;
-
     Player();
+    ~Player();
 
-    void handleEvent( SDL_Event& e);
-    void move();
-    void jump();
-    void dash();
-    void render();
-
+    void handleEvent( SDL_Event& e );
 private:
-    int mPosX, mPosY;
-    int mVelX, mVelY;
-}
+    bool facingRight;
+};

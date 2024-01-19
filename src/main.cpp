@@ -8,6 +8,8 @@ and may not be redistributed without written permission.*/
 #include <string>
 #include "library.hpp"
 #include "dot.hpp"
+#include "ltimer.hpp"
+#include "player.hpp"
 
 int main( int argc, char* args[] )
 {
@@ -31,12 +33,15 @@ int main( int argc, char* args[] )
 			//Event handler
 			SDL_Event e;
 
-			//The dot that will be moving around on the screen
-			Dot dot;
+			Player player;
+
+			LTimer capTimer;
 
 			//While application is running
 			while( !quit )
 			{
+				capTimer.start();
+				
 				//Handle events on queue
 				while( SDL_PollEvent( &e ) != 0 )
 				{
@@ -47,21 +52,28 @@ int main( int argc, char* args[] )
 					}
 
 					//Handle input for the dot
-					dot.handleEvent( e );
+					player.handleEvent( e );
 				}
 
 				//Move the dot
-				dot.move();
+				player.update();
 
 				//Clear screen
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
 
 				//Render objects
-				dot.render();
+				player.render();
 
 				//Update screen
 				SDL_RenderPresent( gRenderer );
+
+				int frameTicks = capTimer.getTicks();
+				if( frameTicks < SCREEN_TICK_PER_FRAME )
+				{
+					//Wait remaining time
+					SDL_Delay( SCREEN_TICK_PER_FRAME - frameTicks );
+				}
 			}
 		}
 	}
