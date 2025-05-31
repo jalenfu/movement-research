@@ -8,6 +8,9 @@ const int SCREEN_HEIGHT = 480;
 const int SCREEN_FPS = 60;
 const int SCREEN_TICK_PER_FRAME = 1000 / SCREEN_FPS;
 
+//Analog joystick dead zone
+const int JOYSTICK_DEAD_ZONE = 8000;
+
 //Starts up SDL and creates window
 bool init();
 
@@ -25,3 +28,6 @@ extern SDL_Renderer* gRenderer;
 
 //Scene textures
 extern LTexture gDotTexture;
+
+//Game Controller 1 handler
+SDL_Joystick* gGameController = NULL;
