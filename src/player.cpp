@@ -33,19 +33,23 @@ Player::~Player()
 
 void Player::handleEvent(KeyboardHandler& k)
 {
-	if (!k.isPressed(SDLK_a) || !k.isPressed(SDLK_d))
+	// Not pressing left or right sets accel to 0
+    if (!k.isPressed(SDLK_a) || !k.isPressed(SDLK_d))
     {
         accelX = 0;
     }
+    // Pressing both left and right sets accel to 0
     if (k.isPressed(SDLK_a) && k.isPressed(SDLK_d))
     {
         accelX = 0;
     }
+    // Pressing left sets accel to -0.6 and sets direction facingRight to false
     else if (k.isPressed(SDLK_a))
     {
         accelX = -0.6;
         facingRight = false;
     }
+    // 
     else if (k.isPressed(SDLK_d))
     {
         accelX = 0.6;

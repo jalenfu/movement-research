@@ -14,3 +14,7 @@ private:
     bool facingRight;
     std::unordered_map<SDL_KeyCode, bool> wasKeyPressed;
 };
+
+/*
+    handleEvent fucking sucks. Add methods to add/remove/set velocity. Adds flexibility for different forms of input.
+*/

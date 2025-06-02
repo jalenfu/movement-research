@@ -54,6 +54,9 @@ int main( int argc, char* args[] )
 					}
 
 					//Handle input for the dot
+					/*
+						Room for centralized input/event handler. Would handle all inputs? Would also handle all general updates below on line 64
+					*/
 					keyboardHandler.handleKeyboardEvent(e);
 				}
 

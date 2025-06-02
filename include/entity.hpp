@@ -4,7 +4,7 @@
 
 enum EntityState
 {
-    wait,
+    waiting,
     walk,
     run,
     dash,
