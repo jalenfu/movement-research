@@ -16,3 +16,9 @@ January 19, 2024:
     What are the best standard practices?
         Am I coding in a way that allows the project to easily expanded upon as more features are added
         I often feel like I'm "hacking in" features as opposed to smoothly implementing them
+
+June 25, 2025:
+    Last direction will hold last direction held instead of bool
+    Input Handler? will spit out which direction is being held (up left, down right, etc.)
+    Battlefield, break the target? (stretch maybe idk)
+    How tf does gravity work

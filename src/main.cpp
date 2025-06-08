@@ -33,7 +33,7 @@ int main( int argc, char* args[] )
 
 			//Event handler
 			SDL_Event e;
-			InputHandler keyboardHandler;
+			InputHandler inputHandler;
 
 			Player player;
 
@@ -57,11 +57,11 @@ int main( int argc, char* args[] )
 					/*
 						Room for centralized input/event handler. Would handle all inputs? Would also handle all general updates below on line 64
 					*/
-					keyboardHandler.handleInput(e);
+					inputHandler.handleInput(e);
 				}
 
 				//Move the dot
-				player.handleEvent(keyboardHandler);
+				player.handleEvent(inputHandler);
 				player.update();
 
 				//Clear screen
