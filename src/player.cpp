@@ -1,4 +1,6 @@
 #include "player.hpp"
+#include <cmath>
+#include "library.hpp"
 
 Player::Player()
 {
@@ -26,6 +28,26 @@ Player::Player()
                      {SDLK_SPACE, false},
                      {SDLK_LSHIFT, false}};
     texture.loadFromFile( "src/dot.bmp" );
+    
+    // Initialize jump states
+    canJump = true;
+    canDoubleJump = false;
+    wasJumpPressed = false;
+    isJumpHeld = false;
+    canFastFall = false;
+    
+    // Initialize jumpsquat and jump timing
+    inJumpsquat = false;
+    jumpsquatFrames = 0;
+    jumpsquatDuration = 3;  // 3 frames of jumpsquat
+    jumpHoldFrames = 0;
+    shortHopThreshold = 2;  // 2 frames or less for short hop
+    fullHopThreshold = 3;   // 3 frames for full hop (all jumpsquat frames)
+    
+    // Initialize analog input support
+    analogSensitivity = 2.0;
+    currentAnalogX = 0.0;
+    currentAnalogY = 0.0;
 }
 
 Player::~Player()
@@ -33,31 +55,248 @@ Player::~Player()
     texture.free();
 }
 
-void Player::handleEvent(InputHandler& k)
+void Player::handleEvent(InputHandler& inputHandler)
 {
     // Reset horizontal acceleration at the start of each frame
     accelX = 0;
     
-	for (Input i : k.getInputs()) {
+    // Track input directions for dashing
+    bool inputUp = false;
+    bool inputDown = false;
+    bool inputLeft = false;
+    bool inputRight = false;
+    isJumpHeld = false;
+    
+    // Handle digital inputs (keyboard + controller buttons)
+	for (Input i : inputHandler.getInputs()) {
         switch (i)
         {
         case left:
             accelX = -2;
             facingRight = false;
+            inputLeft = true;
             break;
         case right:
             accelX = 2;
             facingRight = true;
+            inputRight = true;
             break;
         case up:
+            isJumpHeld = true;
+            // Handle jumping with double jump logic
+            if (!wasJumpPressed) // Only trigger on initial press, not hold
+            {
+                if (canJump) // First jump (ground jump)
+                {
+                    // Start jumpsquat
+                    inJumpsquat = true;
+                    jumpsquatFrames = 0;
+                    jumpHoldFrames = 0;
+                    canJump = false;
+                    canDoubleJump = true;
+                    canFastFall = false;
+                    printf("Started jumpsquat - canJump: %d, canDoubleJump: %d\n", canJump, canDoubleJump);
+                }
+                else if (canDoubleJump) // Second jump (air jump)
+                {
+                    // Air jumps don't have jumpsquat, immediate execution
             velY = -10;
             accelY = 0;
+                    canDoubleJump = false;
+                    canFastFall = false;
+                    printf("Air jump executed: AIR JUMP (strength: -10.0)\n");
+                }
+            }
+            wasJumpPressed = true;
+            inputUp = true;
+            break;
+        case down:
+            // Fast fall - increase downward velocity or cancel upward momentum
+            if (canFastFall) {
+                if (velY > 0)  // Already falling
+                {
+                    velY = std::min(velY + 5.0, 15.0);  // Increase fall speed, cap at 15
+                }
+                else if (velY < 0)  // Rising - cancel upward momentum
+                {
+                    velY = 5.0;  // Start falling immediately
+                }
+            }
+            inputDown = true;
             break;
         case shift:
-            velX += (facingRight ? 10 : -10);
+            // 8-directional dash based on input direction
+            if (inputUp && inputLeft) {
+                // Up-left dash
+                velX = -10;
+                velY = -10;
+            } else if (inputUp && inputRight) {
+                // Up-right dash
+                velX = 10;
+                velY = -10;
+            } else if (inputDown && inputLeft) {
+                // Down-left dash
+                velX = -10;
+                velY = 10;
+            } else if (inputDown && inputRight) {
+                // Down-right dash
+                velX = 10;
+                velY = 10;
+            } else if (inputUp) {
+                // Up dash
+                velY = -10;
+            } else if (inputDown) {
+                // Down dash
+                velY = 10;
+            } else if (inputLeft) {
+                // Left dash
+                velX = -10;
+            } else if (inputRight) {
+                // Right dash
+                velX = 10;
+            } else {
+                // Default dash in facing direction
+                velX = (facingRight ? 10 : -10);
+            }
             break;
         default:
             break;
+        }
+    }
+    
+    // Reset jump press state if jump button is not pressed
+    if (!inputUp) {
+        wasJumpPressed = false;
+    }
+    
+    // Handle analog input for more precise control
+    if (inputHandler.isControllerConnected())
+    {
+        double leftStickX = inputHandler.getLeftStickX();
+        double leftStickY = inputHandler.getLeftStickY();
+        
+        setAnalogInput(leftStickX, leftStickY);
+        
+        // Apply analog movement if no digital input is overriding it
+        if (accelX == 0 && std::abs(leftStickX) > 0.1)
+        {
+            accelX = leftStickX * analogSensitivity;
+            facingRight = (leftStickX > 0);
+        }
+        
+        // Apply analog jump if no digital input is overriding it
+        if (leftStickY < -0.95 && canJump && !inJumpsquat && (posY + height >= SCREEN_HEIGHT))
+        {
+            // Start jumpsquat for analog jump
+            inJumpsquat = true;
+            jumpsquatFrames = 0;
+            jumpHoldFrames = 0;
+            canJump = false;
+            canDoubleJump = true;
+        }
+        if (leftStickY < -0.95) {
+            isJumpHeld = true;
+        }
+        
+        // Apply analog fast fall if no digital input is overriding it
+        if (leftStickY > 0.5 && canFastFall)  // Push down on stick
+        {
+            if (velY > 0)  // Already falling
+            {
+                velY = std::min(velY + 3.0, 15.0);  // Increase fall speed, cap at 15
+            }
+            else if (velY < 0)  // Rising - cancel upward momentum
+            {
+                velY = 3.0;  // Start falling immediately
+            }
+        }
+    }
+
+    // At the end of handleEvent, after all input and movement logic:
+    static bool wasRising = false;
+    if (velY < 0) {
+        wasRising = true;
+    } else if (velY > 0 && wasRising) {
+        canFastFall = true;
+        wasRising = false;
+    }
+}
+
+void Player::setAnalogInput(double leftStickX, double leftStickY)
+{
+    currentAnalogX = leftStickX;
+    currentAnalogY = leftStickY;
+}
+
+void Player::resetJumpStates()
+{
+    // Check if on ground (at bottom of screen)
+    bool onGround = (posY + height >= SCREEN_HEIGHT);
+    
+    // Only reset jump states when transitioning from air to ground
+    static bool wasOnGround = false;
+    
+    if (onGround && !wasOnGround) // Just landed
+    {
+        canJump = true;
+        canDoubleJump = false;
+        // Reset jumpsquat state when on ground
+        inJumpsquat = false;
+        jumpsquatFrames = 0;
+        jumpHoldFrames = 0;
+        canFastFall = false;
+        printf("Just landed - reset jump states - canJump: %d, canDoubleJump: %d\n", canJump, canDoubleJump);
+    }
+    else if (!onGround && wasOnGround) // Just left ground
+    {
+        printf("Left ground - posY: %d, velY: %.2f\n", posY, velY);
+    }
+    
+    wasOnGround = onGround;
+    
+    // Handle jumpsquat state
+    if (inJumpsquat)
+    {
+        jumpsquatFrames++;
+        
+        // Track jump hold duration if button is still pressed
+        if (isJumpHeld)
+        {
+            jumpHoldFrames++;
+        }
+        
+        printf("Jumpsquat frame: %d/%d, hold frames: %d\n", jumpsquatFrames, jumpsquatDuration, jumpHoldFrames);
+        
+        // Execute jump after jumpsquat duration
+        if (jumpsquatFrames >= jumpsquatDuration)
+        {
+            // Determine jump strength based on how long button was held
+            double jumpStrength;
+            const char* jumpType;
+            if (jumpHoldFrames <= shortHopThreshold)
+            {
+                jumpStrength = -7.0;  // Short hop
+                jumpType = "SHORT HOP";
+            }
+            else if (jumpHoldFrames <= fullHopThreshold)
+            {
+                jumpStrength = -10.0;  // Full hop
+                jumpType = "FULL HOP";
+            }
+            else
+            {
+                jumpStrength = -12.0;  // Maximum hop
+                jumpType = "MAX HOP";
+            }
+            
+            velY = jumpStrength;
+            accelY = 0;
+            
+            // Exit jumpsquat state
+            inJumpsquat = false;
+            jumpsquatFrames = 0;
+            jumpHoldFrames = 0;
+            printf("Jump executed: %s (strength: %.1f)\n", jumpType, jumpStrength);
         }
     }
 }

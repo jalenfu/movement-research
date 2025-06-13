@@ -39,6 +39,16 @@ int main( int argc, char* args[] )
 
 			LTimer capTimer;
 
+			// Initialize controller
+			if (inputHandler.initController())
+			{
+				printf("Controller initialized successfully!\n");
+			}
+			else
+			{
+				printf("No controller found or failed to initialize controller.\n");
+			}
+
 			//While application is running
 			while( !quit )
 			{
@@ -63,6 +73,7 @@ int main( int argc, char* args[] )
 				//Move the dot
 				player.handleEvent(inputHandler);
 				player.update();
+				player.resetJumpStates();
 
 				//Clear screen
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );

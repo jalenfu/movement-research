@@ -3,22 +3,39 @@
 #include <vector>
 #include <set>
 #include <SDL.h>
-
-enum Input
-{
-    up,
-    down,
-    left,
-    right,
-    shift
-};
+#include "input_types.hpp"
+#include "controller_handler.hpp"
 
 class InputHandler
 {
 private:
-    std::set<Input> inputList;
-public:
-    void handleInput(SDL_Event& e);
+    std::set<Input> keyboardInputList;
+    std::set<Input> controllerInputList;
+    ControllerHandler controllerHandler;
+    bool controllerEnabled;
 
+public:
+    InputHandler();
+    ~InputHandler();
+    
+    void handleInput(SDL_Event& e);
     const std::set<Input>& getInputs();
+    
+    // Controller-specific methods
+    bool initController();
+    bool isControllerConnected() const;
+    
+    // Get analog stick values for more precise control
+    double getLeftStickX() const;
+    double getLeftStickY() const;
+    double getRightStickX() const;
+    double getRightStickY() const;
+    
+    // Get trigger values
+    double getLeftTrigger() const;
+    double getRightTrigger() const;
+    
+    // Enable/disable controller
+    void enableController(bool enable) { controllerEnabled = enable; }
+    bool isControllerEnabled() const { return controllerEnabled; }
 };
