@@ -24,14 +24,17 @@ void Entity::update()
     // Apply acceleration to velocity
     velX += accelX;
 
-    // Clamp velocity to maximum
-    if (velX > maxVelX)
+    // Clamp velocity to maximum (only if clamping is enabled)
+    if (velocityClampingEnabled)
     {
-        velX = maxVelX;
-    }
-    if (velX < -maxVelX)
-    {
-        velX = -maxVelX;
+        if (velX > maxVelX)
+        {
+            velX = maxVelX;
+        }
+        if (velX < -maxVelX)
+        {
+            velX = -maxVelX;
+        }
     }
 
     // Update position

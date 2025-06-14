@@ -28,7 +28,12 @@ public:
     void render();
     void handleEvent( SDL_Event& e );
     virtual void update();
+    
+    // Dash-related methods
+    void setVelocityClamping(bool enabled) { velocityClampingEnabled = enabled; }
+    bool isVelocityClampingEnabled() const { return velocityClampingEnabled; }
 
 private:
     int lastPosX, lastPosY, lastVelX, lastVelY;
+    bool velocityClampingEnabled;
 };
