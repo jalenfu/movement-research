@@ -5,7 +5,7 @@
 #include "input_types.hpp"
 
 // Analog joystick dead zone constant
-const int JOYSTICK_DEAD_ZONE = 12000;
+const int JOYSTICK_DEAD_ZONE = 15000;
 
 class ControllerHandler
 {

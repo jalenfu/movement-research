@@ -39,6 +39,11 @@ int main( int argc, char* args[] )
 
 			LTimer capTimer;
 
+			// Add Battlefield-style platforms (centered)
+			Entity::addPlatform(45, 350, 150, 20);   // Left platform
+			Entity::addPlatform(245, 250, 150, 20);  // Center platform (higher)
+			Entity::addPlatform(445, 350, 150, 20);  // Right platform
+
 			// Initialize controller
 			if (inputHandler.initController())
 			{
@@ -72,8 +77,7 @@ int main( int argc, char* args[] )
 
 				//Move the dot
 				player.handleEvent(inputHandler);
-				player.update();
-				player.resetJumpStates();
+				player.update(inputHandler);
 
 				//Clear screen
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
@@ -81,6 +85,13 @@ int main( int argc, char* args[] )
 
 				//Render objects
 				player.render();
+				
+				// Render platforms
+				SDL_SetRenderDrawColor(gRenderer, 0x80, 0x80, 0x80, 0xFF); // Gray color
+				for (const Platform& platform : Entity::getPlatforms()) {
+					SDL_Rect platformRect = {platform.x, platform.y, platform.width, platform.height};
+					SDL_RenderFillRect(gRenderer, &platformRect);
+				}
 
 				//Update screen
 				SDL_RenderPresent( gRenderer );
