@@ -1,6 +1,7 @@
 #include "entity.hpp"
 #include "library.hpp"
 #include <iostream>
+#include <cstdlib> // For rand()
 // #include <stdlib.h>
 
 // Initialize static platform vector
@@ -8,6 +9,9 @@ std::vector<Platform> Entity::platforms;
 
 // Initialize pass-through flag
 bool Entity::passThroughPlatforms = false;
+
+// Initialize static target vector
+std::vector<Target> Entity::targets;
 
 void Entity::addPlatform(int x, int y, int width, int height)
 {
@@ -17,6 +21,70 @@ void Entity::addPlatform(int x, int y, int width, int height)
 void Entity::clearPlatforms()
 {
     platforms.clear();
+}
+
+void Entity::addTarget(int x, int y, int width, int height)
+{
+    targets.push_back(Target(x, y, width, height));
+}
+
+void Entity::clearTargets()
+{
+    targets.clear();
+}
+
+void Entity::spawnRandomTarget()
+{
+    // Clear existing targets
+    targets.clear();
+    
+    // Generate random position (avoiding platforms)
+    int targetX, targetY;
+    bool validPosition = false;
+    
+    while (!validPosition) {
+        targetX = rand() % (SCREEN_WIDTH - 30); // 30 is target width
+        targetY = rand() % (SCREEN_HEIGHT - 100) + 50; // Avoid top and bottom edges
+        
+        // Check if position overlaps with platforms
+        validPosition = true;
+        for (const Platform& platform : platforms) {
+            if (targetX < platform.x + platform.width &&
+                targetX + 30 > platform.x &&
+                targetY < platform.y + platform.height &&
+                targetY + 30 > platform.y) {
+                validPosition = false;
+                break;
+            }
+        }
+    }
+    
+    // Add the target
+    addTarget(targetX, targetY, 30, 30);
+}
+
+bool Entity::checkTargetCollision()
+{
+    for (auto& target : targets) {
+        if (target.active &&
+            posX < target.x + target.width &&
+            posX + width > target.x &&
+            posY < target.y + target.height &&
+            posY + height > target.y) {
+            // Player hit the target
+            target.active = false;
+            return true;
+        }
+    }
+    return false;
+}
+
+void Entity::handleTargetCollision()
+{
+    if (checkTargetCollision()) {
+        // Target was hit, spawn a new one
+        spawnRandomTarget();
+    }
 }
 
 bool Entity::checkPlatformCollision()
@@ -138,6 +206,9 @@ void Entity::update()
 
     // Check platform collisions (will be overridden for pass-through in Player class)
     checkPlatformCollision();
+    
+    // Check target collisions and handle respawning
+    handleTargetCollision();
 
     // Check if on ground (at bottom of screen) - AFTER position update
     bool onGround = (posY + height >= SCREEN_HEIGHT);

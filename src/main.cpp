@@ -40,9 +40,12 @@ int main( int argc, char* args[] )
 			LTimer capTimer;
 
 			// Add Battlefield-style platforms (centered)
-			Entity::addPlatform(45, 350, 150, 20);   // Left platform
-			Entity::addPlatform(245, 250, 150, 20);  // Center platform (higher)
-			Entity::addPlatform(445, 350, 150, 20);  // Right platform
+			Entity::addPlatform(45, 400, 150, 20);   // Left platform
+			Entity::addPlatform(245, 350, 150, 20);  // Center platform (higher)
+			Entity::addPlatform(445, 400, 150, 20);  // Right platform
+
+			// Spawn initial target
+			Entity::spawnRandomTarget();
 
 			// Initialize controller
 			if (inputHandler.initController())
@@ -91,6 +94,15 @@ int main( int argc, char* args[] )
 				for (const Platform& platform : Entity::getPlatforms()) {
 					SDL_Rect platformRect = {platform.x, platform.y, platform.width, platform.height};
 					SDL_RenderFillRect(gRenderer, &platformRect);
+				}
+				
+				// Render targets
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF); // Red color
+				for (const Target& target : Entity::getTargets()) {
+					if (target.active) {
+						SDL_Rect targetRect = {target.x, target.y, target.width, target.height};
+						SDL_RenderFillRect(gRenderer, &targetRect);
+					}
 				}
 
 				//Update screen
