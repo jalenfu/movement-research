@@ -10,7 +10,7 @@ and may not be redistributed without written permission.*/
 #include "dot.hpp"
 #include "ltimer.hpp"
 #include "player.hpp"
-#include "keyboard_handler.hpp"
+#include "input_handler.hpp"
 
 int main( int argc, char* args[] )
 {
@@ -33,7 +33,7 @@ int main( int argc, char* args[] )
 
 			//Event handler
 			SDL_Event e;
-			KeyboardHandler keyboardHandler;
+			InputHandler keyboardHandler;
 
 			Player player;
 
@@ -57,7 +57,7 @@ int main( int argc, char* args[] )
 					/*
 						Room for centralized input/event handler. Would handle all inputs? Would also handle all general updates below on line 64
 					*/
-					keyboardHandler.handleKeyboardEvent(e);
+					keyboardHandler.handleInput(e);
 				}
 
 				//Move the dot

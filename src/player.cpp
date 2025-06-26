@@ -31,53 +31,28 @@ Player::~Player()
     texture.free();
 }
 
-void Player::handleEvent(KeyboardHandler& k)
+void Player::handleEvent(InputHandler& k)
 {
-	// Not pressing left or right sets accel to 0
-    if (!k.isPressed(SDLK_a) || !k.isPressed(SDLK_d))
-    {
-        accelX = 0;
-    }
-    // Pressing both left and right sets accel to 0
-    if (k.isPressed(SDLK_a) && k.isPressed(SDLK_d))
-    {
-        accelX = 0;
-    }
-    // Pressing left sets accel to -0.6 and sets direction facingRight to false
-    else if (k.isPressed(SDLK_a))
-    {
-        accelX = -0.6;
-        facingRight = false;
-    }
-    // 
-    else if (k.isPressed(SDLK_d))
-    {
-        accelX = 0.6;
-        facingRight = true;
-    }
-    if (!wasKeyPressed[SDLK_SPACE] && k.isPressed(SDLK_SPACE))
-    {
-        velY -= 10;
-        wasKeyPressed[SDLK_SPACE] = true;
-    }
-    else if (!k.isPressed(SDLK_SPACE))
-    {
-        wasKeyPressed[SDLK_SPACE] = false;
-    }
-    if (!wasKeyPressed[SDLK_LSHIFT] && k.isPressed(SDLK_LSHIFT))
-    {
-        if (facingRight)
+	for (Input i : k.getInputs()) {
+        switch (i)
         {
-            velX += 10;
+        case left:
+            accelX = -0.6;
+            facingRight = false;
+            break;
+        case right:
+            accelX = 0.6;
+            facingRight = true;
+            break;
+        case up:
+            accelY = -10;
+            break;
+        case shift:
+            velX + (facingRight ? 10 : -10);
+            break;
+        default:
+            break;
         }
-        else
-        {
-            velX -= 10;
-        }
-        wasKeyPressed[SDLK_LSHIFT] = true;
-    }
-    else if (!k.isPressed(SDLK_LSHIFT))
-    {
-        wasKeyPressed[SDLK_LSHIFT] = false;
     }
 }
+
