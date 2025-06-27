@@ -30,4 +30,4 @@ extern SDL_Renderer* gRenderer;
 extern LTexture gDotTexture;
 
 //Game Controller 1 handler
-SDL_Joystick* gGameController = NULL;
+extern SDL_Joystick* gGameController;

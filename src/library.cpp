@@ -3,6 +3,7 @@
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
+SDL_Joystick* gGameController = NULL;
 LTexture gDotTexture;
 
 bool init()

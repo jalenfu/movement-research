@@ -15,7 +15,7 @@ enum EntityState
 class Entity
 {
 protected:
-    double gravity;
+    double gravity, friction;
     int posX, posY;
     double velX, velY;
     double accelX, accelY;
