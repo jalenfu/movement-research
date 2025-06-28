@@ -22,9 +22,7 @@ ControllerHandler::ControllerHandler()
         {1, shift},   // B button (Xbox) / Circle (PlayStation)
         {2, up},    // X button (Xbox) / Square (PlayStation)
         {3, right},   // Y button (Xbox) / Triangle (PlayStation)
-        {4, left},    // Left bumper
         {5, right},   // Right bumper
-        {6, shift},   // Back button
         {7, up},      // Start button
         {8, left},    // Left stick button
         {9, right},   // Right stick button
@@ -113,12 +111,14 @@ void ControllerHandler::handleControllerEvent(SDL_Event& e)
             // Button press on controller 0
             if (e.jbutton.which == 0)
             {
-                // Handle button press if mapped
+                // Always add button to active buttons for direct access
+                activeButtons.insert(e.jbutton.button);
+                
+                // Also handle button press if mapped
                 auto it = buttonMappings.find(e.jbutton.button);
                 if (it != buttonMappings.end())
                 {
-                    // Add button to active inputs
-                    activeButtons.insert(e.jbutton.button);
+                    // Button is already added above, no need to add again
                 }
             }
             break;
@@ -247,4 +247,20 @@ double ControllerHandler::getRightTrigger() const
         return 0.0;
     
     return static_cast<double>(rightTrigger) / 32767.0;
+}
+
+bool ControllerHandler::isStartButtonPressed() const
+{
+    if (!controllerConnected) return false;
+    
+    // Check if start button (usually button 7) is in active buttons
+    return activeButtons.find(6) != activeButtons.end();
+}
+
+bool ControllerHandler::isButtonPressed(Uint8 button) const
+{
+    if (!controllerConnected) return false;
+    
+    // Check if the specified button is in active buttons
+    return activeButtons.find(button) != activeButtons.end();
 } 

@@ -1,16 +1,21 @@
 #pragma once
 #include <SDL.h>
-#include "entity.hpp"
+#include <unordered_map>
+#include "ltexture.hpp"
 #include "input_handler.hpp"
+#include "input_types.hpp"
+#include "platform.hpp"
+#include "target.hpp"
 
-class Player : virtual public Entity
+class ComplexPlayer
 {
 public:
-    Player();
-    ~Player();
+    ComplexPlayer();
+    ~ComplexPlayer();
 
-    void handleEvent( InputHandler& inputHandler );
-    void update( InputHandler& inputHandler );
+    void handleEvent(InputHandler& inputHandler);
+    void update(InputHandler& inputHandler);
+    void render();
     
     // New methods for analog input support
     void setAnalogInput(double leftStickX, double leftStickY);
@@ -19,8 +24,26 @@ public:
     
     // Jump state management
     void resetJumpStates();
+    
+    // Platform and target collision
+    bool checkPlatformCollision();
+    bool isOnGroundOrPlatform() const;
+    bool checkTargetCollision();
+    void handleTargetCollision();
 
 private:
+    // Position and movement
+    int posX, posY;
+    double velX, velY;
+    double accelX, accelY;
+    double maxVelX, maxVelY;
+    int width, height;
+    
+    // Physics
+    double gravity, friction;
+    bool velocityClampingEnabled;
+    
+    // Direction
     bool facingRight;
     std::unordered_map<SDL_KeyCode, bool> wasKeyPressed;
     
@@ -53,8 +76,17 @@ private:
     double analogSensitivity;
     double currentAnalogX;
     double currentAnalogY;
-};
+    
+    // Platform state
+    bool onPlatform;
+    int currentPlatform;
+    bool standingOnPlatform;
+    
+    // Texture
+    LTexture texture;
+    
+    // Last position/velocity for tracking
+    int lastPosX, lastPosY, lastVelX, lastVelY;
 
-/*
-    handleEvent fucking sucks. Add methods to add/remove/set velocity. Adds flexibility for different forms of input.
-*/
+    bool wasOnGroundOrPlatform;
+}; 

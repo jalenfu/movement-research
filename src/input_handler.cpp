@@ -136,3 +136,19 @@ double InputHandler::getRightTrigger() const
     }
     return 0.0;
 }
+
+bool InputHandler::isPausePressed() const
+{
+    if (controllerEnabled && controllerHandler.isConnected())
+    {
+        return controllerHandler.isStartButtonPressed();
+    }
+    return false;
+}
+
+bool InputHandler::isKeyPressed(SDL_Keycode key) const
+{
+    const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+    SDL_Scancode scancode = SDL_GetScancodeFromKey(key);
+    return currentKeyStates[scancode];
+}

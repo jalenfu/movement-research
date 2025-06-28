@@ -35,7 +35,16 @@ public:
     double getLeftTrigger() const;
     double getRightTrigger() const;
     
+    // Check for pause button (Start button on controller)
+    bool isPausePressed() const;
+    
+    // Check if a specific key is pressed
+    bool isKeyPressed(SDL_Keycode key) const;
+    
     // Enable/disable controller
     void enableController(bool enable) { controllerEnabled = enable; }
     bool isControllerEnabled() const { return controllerEnabled; }
+    
+    // Get controller handler for direct button access
+    const ControllerHandler& getControllerHandler() const { return controllerHandler; }
 };

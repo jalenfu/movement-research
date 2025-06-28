@@ -1,8 +1,8 @@
-#include "player.hpp"
+#include "complex_player.hpp"
 #include <cmath>
 #include "library.hpp"
 
-Player::Player()
+ComplexPlayer::ComplexPlayer()
 {
     posX = 0;
     posY = 300;
@@ -60,15 +60,28 @@ Player::Player()
     currentAnalogY = 0.0;
     
     // Initialize velocity clamping (enabled by default)
-    setVelocityClamping(true);
+    velocityClampingEnabled = true;
+    
+    // Initialize platform state
+    onPlatform = false;
+    currentPlatform = -1;
+    standingOnPlatform = false;
+    
+    // Initialize last position/velocity
+    lastPosX = posX;
+    lastPosY = posY;
+    lastVelX = velX;
+    lastVelY = velY;
+
+    wasOnGroundOrPlatform = false;
 }
 
-Player::~Player()
+ComplexPlayer::~ComplexPlayer()
 {
     texture.free();
 }
 
-void Player::handleEvent(InputHandler& inputHandler)
+void ComplexPlayer::handleEvent(InputHandler& inputHandler)
 {
     // Reset horizontal acceleration at the start of each frame
     accelX = 0;
@@ -188,7 +201,7 @@ void Player::handleEvent(InputHandler& inputHandler)
                     dashFrames = 0;
                     
                     // Disable velocity clamping during dash
-                    setVelocityClamping(false);
+                    velocityClampingEnabled = false;
                     
                     // Use air dash if in air
                     if (!onGround) {
@@ -269,13 +282,13 @@ void Player::handleEvent(InputHandler& inputHandler)
     }
 }
 
-void Player::setAnalogInput(double leftStickX, double leftStickY)
+void ComplexPlayer::setAnalogInput(double leftStickX, double leftStickY)
 {
     currentAnalogX = leftStickX;
     currentAnalogY = leftStickY;
 }
 
-void Player::update(InputHandler& inputHandler)
+void ComplexPlayer::update(InputHandler& inputHandler)
 {
     // Check if holding down for platform pass-through
     bool holdingDown = false;
@@ -293,26 +306,145 @@ void Player::update(InputHandler& inputHandler)
         holdingDown = true;
     }
     
-    // Set pass-through flag based on input
-    Entity::setPassThroughPlatforms(holdingDown);
+    // Apply friction against velocity, not acceleration
+    if (velX != 0)
+    {
+        // Apply friction in the opposite direction of velocity
+        if (velX > 0)
+        {
+            velX -= friction;
+            if (velX < 0) velX = 0; // Prevent overshooting zero
+        }
+        else if (velX < 0)
+        {
+            velX += friction;
+            if (velX > 0) velX = 0; // Prevent overshooting zero
+        }
+    }
+
+    // Apply acceleration to velocity
+    velX += accelX;
+
+    // Clamp velocity to maximum (only if clamping is enabled)
+    if (velocityClampingEnabled)
+    {
+        if (velX > maxVelX)
+        {
+            velX = maxVelX;
+        }
+        if (velX < -maxVelX)
+        {
+            velX = -maxVelX;
+        }
+    }
+
+    // Update position
+    posX += velX;
+
+    // Handle horizontal boundary collisions
+    if (posX < 0)
+    {
+        posX = 0;
+        velX = 0; // Stop horizontal movement
+    }
+    else if (posX + width > SCREEN_WIDTH)
+    {
+        posX = SCREEN_WIDTH - width;
+        velX = 0; // Stop horizontal movement
+    }
+
+    // Update vertical position
+    posY += velY;
+
+    // Handle vertical boundary collisions
+    if (posY < 0)
+    {
+        posY = 0;
+        velY = 0; // Stop upward movement
+    }
+    else if (posY + height > SCREEN_HEIGHT)
+    {
+        posY = SCREEN_HEIGHT - height; // Place exactly on ground
+        velY = 0; // Stop downward movement
+        accelY = 0; // Reset acceleration when on ground
+    }
+
+    // Check platform collisions with pass-through logic
+    onPlatform = PlatformManager::checkPlatformCollisionWithPrevious(posX, posY, lastPosX, lastPosY, width, height, velY, holdingDown);
+    standingOnPlatform = PlatformManager::isOnPlatform(posX, posY, width, height, velY, holdingDown);
     
-    // Call parent update method
-    Entity::update();
+    // Debug platform state
+    if (standingOnPlatform) {
+        printf("Platform state - onPlatform: %d, standingOnPlatform: %d, velY: %.2f, wasOnGroundOrPlatform: %d\n", 
+               onPlatform, standingOnPlatform, velY, wasOnGroundOrPlatform);
+    }
+    
+    // Handle platform landing - place player exactly on platform
+    if (onPlatform && velY > 0) // Landing on platform
+    {
+        // Find the platform we're landing on and place player on it
+        for (const Platform& platform : PlatformManager::getPlatforms())
+        {
+            if (posX + width > platform.x && 
+                posX < platform.x + platform.width)
+            {
+                // Check if we're currently on the platform surface
+                if (posY + height >= platform.y && 
+                    posY + height <= platform.y + 2)
+                {
+                    posY = platform.y - height; // Place exactly on platform
+                    break;
+                }
+                // Check if we tunneled through the platform
+                else if (lastPosY + height < platform.y && 
+                         posY + height > platform.y)
+                {
+                    posY = platform.y - height; // Place exactly on platform
+                    break;
+                }
+            }
+        }
+        velY = 0; // Stop downward movement
+    }
+
+    // Check if on ground (at bottom of screen) - AFTER position update
+    bool onGround = (posY + height >= SCREEN_HEIGHT);
+
+    // Only apply gravity if not on ground or platform
+    if (!onGround && !standingOnPlatform)
+    {
+        velY += gravity;
+    }
+    else
+    {
+        accelY = 0; // Reset vertical acceleration when on ground or platform
+    }
+
+    velY += accelY;
+
+    // Check target collisions and handle respawning
+    handleTargetCollision();
     
     // Reset jump states after position update
     resetJumpStates();
+    
+    // Update last position/velocity
+    lastPosX = posX;
+    lastPosY = posY;
+    lastVelX = velX;
+    lastVelY = velY;
+
+    // Update ground/platform state for next frame
+    wasOnGroundOrPlatform = (posY + height >= SCREEN_HEIGHT) || standingOnPlatform;
 }
 
-void Player::resetJumpStates()
+void ComplexPlayer::resetJumpStates()
 {
     // Check if on ground or platform (use existing onPlatform state from update)
     bool onGround = (posY + height >= SCREEN_HEIGHT);
-    // Don't call checkPlatformCollision() here - use the onPlatform state from update()
     
     // Only reset jump states when transitioning from air to ground/platform
-    static bool wasOnGround = false;
-    
-    if ((onGround || onPlatform) && !wasOnGround) // Just landed
+    if ((onGround || standingOnPlatform) && !wasOnGroundOrPlatform) // Just landed
     {
         canJump = true;
         canDoubleJump = false;
@@ -327,11 +459,9 @@ void Player::resetJumpStates()
         canDash = true;  // Can dash again on ground
         hasAirDash = true;  // Restore air dash
         // Ensure velocity clamping is enabled when not dashing
-        setVelocityClamping(true);
+        velocityClampingEnabled = true;
         printf("Just landed - reset jump states - canJump: %d, canDoubleJump: %d\n", canJump, canDoubleJump);
     }
-    
-    wasOnGround = (onGround || standingOnPlatform);
     
     // Handle jumpsquat state
     if (inJumpsquat)
@@ -399,7 +529,7 @@ void Player::resetJumpStates()
             dashFrames = 0;
             
             // Re-enable velocity clamping after dash
-            setVelocityClamping(true);
+            velocityClampingEnabled = true;
             
             // If in air, prevent further dashing until landing
             bool onGround = (posY + height >= SCREEN_HEIGHT);
@@ -412,3 +542,27 @@ void Player::resetJumpStates()
     }
 }
 
+bool ComplexPlayer::checkPlatformCollision()
+{
+    return onPlatform;
+}
+
+bool ComplexPlayer::isOnGroundOrPlatform() const
+{
+    return (posY + height >= SCREEN_HEIGHT) || standingOnPlatform;
+}
+
+bool ComplexPlayer::checkTargetCollision()
+{
+    return TargetManager::checkTargetCollision(posX, posY, width, height);
+}
+
+void ComplexPlayer::handleTargetCollision()
+{
+    TargetManager::handleTargetCollision(posX, posY, width, height);
+}
+
+void ComplexPlayer::render()
+{
+    texture.render(posX, posY);
+} 

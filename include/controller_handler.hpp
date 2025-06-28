@@ -54,4 +54,10 @@ public:
     // Get trigger values (0.0 to 1.0)
     double getLeftTrigger() const;
     double getRightTrigger() const;
+    
+    // Check if start button is pressed
+    bool isStartButtonPressed() const;
+    
+    // Check if a specific button is pressed
+    bool isButtonPressed(Uint8 button) const;
 }; 
