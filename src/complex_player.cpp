@@ -22,11 +22,6 @@ ComplexPlayer::ComplexPlayer()
     width = 20;
     height = 20;
 
-    facingRight = true;
-    wasKeyPressed = {{SDLK_a, false},
-                     {SDLK_d, false},
-                     {SDLK_SPACE, false},
-                     {SDLK_LSHIFT, false}};
     texture.loadFromFile( "src/dot.bmp" );
     
     // Initialize jump states
@@ -64,7 +59,6 @@ ComplexPlayer::ComplexPlayer()
     
     // Initialize platform state
     onPlatform = false;
-    currentPlatform = -1;
     standingOnPlatform = false;
     
     // Initialize last position/velocity
@@ -99,12 +93,10 @@ void ComplexPlayer::handleEvent(InputHandler& inputHandler)
         {
         case left:
             accelX = -2;
-            facingRight = false;
             inputLeft = true;
             break;
         case right:
             accelX = 2;
-            facingRight = true;
             inputRight = true;
             break;
         case up:
@@ -191,8 +183,8 @@ void ComplexPlayer::handleEvent(InputHandler& inputHandler)
                         dashVelocityX = 14.0;   // Stronger horizontal
                         dashVelocityY = 0.0;
                     } else {
-                        // Default dash in facing direction
-                        dashVelocityX = (facingRight ? 14.0 : -14.0);  // Stronger horizontal
+                        // Default dash in current movement direction
+                        dashVelocityX = (velX >= 0 ? 14.0 : -14.0);  // Stronger horizontal
                         dashVelocityY = 0.0;
                     }
                     
@@ -241,7 +233,6 @@ void ComplexPlayer::handleEvent(InputHandler& inputHandler)
         if (accelX == 0 && std::abs(leftStickX) > 0.1)
         {
             accelX = leftStickX * analogSensitivity;
-            facingRight = (leftStickX > 0);
         }
         
         // Apply analog jump if no digital input is overriding it
@@ -373,11 +364,6 @@ void ComplexPlayer::update(InputHandler& inputHandler)
     onPlatform = PlatformManager::checkPlatformCollisionWithPrevious(posX, posY, lastPosX, lastPosY, width, height, velY, holdingDown);
     standingOnPlatform = PlatformManager::isOnPlatform(posX, posY, width, height, velY, holdingDown);
     
-    // Debug platform state
-    if (standingOnPlatform) {
-        printf("Platform state - onPlatform: %d, standingOnPlatform: %d, velY: %.2f, wasOnGroundOrPlatform: %d\n", 
-               onPlatform, standingOnPlatform, velY, wasOnGroundOrPlatform);
-    }
     
     // Handle platform landing - place player exactly on platform
     if (onPlatform && velY > 0) // Landing on platform
