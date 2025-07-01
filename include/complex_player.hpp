@@ -1,21 +1,18 @@
 #pragma once
 #include <SDL.h>
 #include <unordered_map>
-#include "ltexture.hpp"
+#include "player.hpp"
 #include "input_handler.hpp"
 #include "input_types.hpp"
-#include "platform.hpp"
-#include "target.hpp"
 
-class ComplexPlayer
+class ComplexPlayer : public Player
 {
 public:
     ComplexPlayer();
     ~ComplexPlayer();
 
-    void handleEvent(InputHandler& inputHandler);
-    void update(InputHandler& inputHandler);
-    void render();
+    void handleEvent(InputHandler& inputHandler) override;
+    void update(InputHandler& inputHandler) override;
     
     // New methods for analog input support
     void setAnalogInput(double leftStickX, double leftStickY);
@@ -24,23 +21,14 @@ public:
     
     // Jump state management
     void resetJumpStates();
-    
-    // Platform and target collision
-    bool checkPlatformCollision();
-    bool isOnGroundOrPlatform() const;
-    bool checkTargetCollision();
-    void handleTargetCollision();
 
 private:
-    // Position and movement
-    int posX, posY;
-    double velX, velY;
+    // Acceleration-based movement
     double accelX, accelY;
     double maxVelX, maxVelY;
-    int width, height;
     
     // Physics
-    double gravity, friction;
+    double friction;
     bool velocityClampingEnabled;
     
     // Jump state tracking
@@ -73,15 +61,8 @@ private:
     double currentAnalogX;
     double currentAnalogY;
     
-    // Platform state
-    bool onPlatform;
-    bool standingOnPlatform;
-    
-    // Texture
-    LTexture texture;
-    
     // Last position/velocity for tracking
-    int lastPosX, lastPosY, lastVelX, lastVelY;
+    int lastVelX, lastVelY;
 
     bool wasOnGroundOrPlatform;
 }; 
