@@ -7,7 +7,6 @@ and may not be redistributed without written permission.*/
 #include <stdio.h>
 #include <string>
 #include "library.hpp"
-#include "dot.hpp"
 #include "ltimer.hpp"
 #include "complex_player.hpp"
 #include "simple_player.hpp"

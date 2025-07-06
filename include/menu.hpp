@@ -17,8 +17,8 @@ private:
     // Menu options
     static const int MENU_OPTIONS = 2;
     const char* menuItems[MENU_OPTIONS] = {
-        "Complex Movement (Celeste-style)",
-        "Simple Movement (Hollow Knight-style)"
+        "Complex Movement",
+        "Simple Movement"
     };
 
 public:

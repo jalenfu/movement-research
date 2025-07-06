@@ -128,7 +128,7 @@ void ComplexPlayer::handleEvent(InputHandler& inputHandler)
             inputDown = true;
             break;
         case shift:
-            // 8-directional dash based on input direction - Celeste style
+            // 8-directional dash based on input direction
             if (!wasDashPressed && canDash) // Only dash on initial press, not hold
             {
                 bool onGround = (posY + height >= SCREEN_HEIGHT);
@@ -413,7 +413,7 @@ void ComplexPlayer::resetJumpStates()
         // End dash after duration
         if (dashFrames >= dashDuration)
         {
-            // Keep the final velocity (Celeste style)
+            // Keep the final velocity
             // Don't reset velX and velY - let them persist
             inDash = false;
             dashFrames = 0;
