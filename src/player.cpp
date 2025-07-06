@@ -8,7 +8,7 @@ Player::Player()
     posY = 300;
 
     gravity = 0.4;
-    friction = 0.4;
+    friction = 0.57;
 
     velX = 0;
     velY = 0;
@@ -275,15 +275,44 @@ void Player::setAnalogInput(double leftStickX, double leftStickY)
     currentAnalogY = leftStickY;
 }
 
+void Player::update(InputHandler& inputHandler)
+{
+    // Check if holding down for platform pass-through
+    bool holdingDown = false;
+    
+    // Check digital inputs for down
+    for (Input i : inputHandler.getInputs()) {
+        if (i == down) {
+            holdingDown = true;
+            break;
+        }
+    }
+    
+    // Check analog input for down
+    if (currentAnalogY > 0.5) {
+        holdingDown = true;
+    }
+    
+    // Set pass-through flag based on input
+    Entity::setPassThroughPlatforms(holdingDown);
+    
+    // Call parent update method
+    Entity::update();
+    
+    // Reset jump states after position update
+    resetJumpStates();
+}
+
 void Player::resetJumpStates()
 {
-    // Check if on ground (at bottom of screen)
+    // Check if on ground or platform (use existing onPlatform state from update)
     bool onGround = (posY + height >= SCREEN_HEIGHT);
+    // Don't call checkPlatformCollision() here - use the onPlatform state from update()
     
-    // Only reset jump states when transitioning from air to ground
+    // Only reset jump states when transitioning from air to ground/platform
     static bool wasOnGround = false;
     
-    if (onGround && !wasOnGround) // Just landed
+    if ((onGround || onPlatform) && !wasOnGround) // Just landed
     {
         canJump = true;
         canDoubleJump = false;
@@ -301,12 +330,8 @@ void Player::resetJumpStates()
         setVelocityClamping(true);
         printf("Just landed - reset jump states - canJump: %d, canDoubleJump: %d\n", canJump, canDoubleJump);
     }
-    else if (!onGround && wasOnGround) // Just left ground
-    {
-        printf("Left ground - posY: %d, velY: %.2f\n", posY, velY);
-    }
     
-    wasOnGround = onGround;
+    wasOnGround = (onGround || standingOnPlatform);
     
     // Handle jumpsquat state
     if (inJumpsquat)
@@ -378,7 +403,7 @@ void Player::resetJumpStates()
             
             // If in air, prevent further dashing until landing
             bool onGround = (posY + height >= SCREEN_HEIGHT);
-            if (!onGround) {
+            if (!onGround && !standingOnPlatform) {
                 canDash = false;  // Can't dash again until landing
             }
             

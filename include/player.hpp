@@ -10,6 +10,7 @@ public:
     ~Player();
 
     void handleEvent( InputHandler& inputHandler );
+    void update( InputHandler& inputHandler );
     
     // New methods for analog input support
     void setAnalogInput(double leftStickX, double leftStickY);

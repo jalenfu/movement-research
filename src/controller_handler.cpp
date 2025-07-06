@@ -20,7 +20,7 @@ ControllerHandler::ControllerHandler()
     buttonMappings = {
         {0, up},      // A button (Xbox) / Cross (PlayStation)
         {1, shift},   // B button (Xbox) / Circle (PlayStation)
-        {2, down},    // X button (Xbox) / Square (PlayStation)
+        {2, up},    // X button (Xbox) / Square (PlayStation)
         {3, right},   // Y button (Xbox) / Triangle (PlayStation)
         {4, left},    // Left bumper
         {5, right},   // Right bumper
