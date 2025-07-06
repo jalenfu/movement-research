@@ -9,8 +9,13 @@ and may not be redistributed without written permission.*/
 #include "library.hpp"
 #include "dot.hpp"
 #include "ltimer.hpp"
-#include "player.hpp"
+#include "complex_player.hpp"
+#include "simple_player.hpp"
 #include "input_handler.hpp"
+#include "platform.hpp"
+#include "target.hpp"
+#include "game_state.hpp"
+#include "menu.hpp"
 
 int main( int argc, char* args[] )
 {
@@ -34,18 +39,21 @@ int main( int argc, char* args[] )
 			//Event handler
 			SDL_Event e;
 			InputHandler inputHandler;
+			GameStateManager gameState;
+			Menu menu;
 
-			Player player;
+			ComplexPlayer complexPlayer;
+			SimplePlayer simplePlayer;
 
 			LTimer capTimer;
 
 			// Add Battlefield-style platforms (centered)
-			Entity::addPlatform(45, 400, 150, 20);   // Left platform
-			Entity::addPlatform(245, 350, 150, 20);  // Center platform (higher)
-			Entity::addPlatform(445, 400, 150, 20);  // Right platform
+			PlatformManager::addPlatform(45, 400, 150, 20);   // Left platform
+			PlatformManager::addPlatform(245, 300, 150, 20);  // Center platform (higher)
+			PlatformManager::addPlatform(445, 400, 150, 20);  // Right platform
 
 			// Spawn initial target
-			Entity::spawnRandomTarget();
+			TargetManager::spawnRandomTarget();
 
 			// Initialize controller
 			if (inputHandler.initController())
@@ -71,42 +79,76 @@ int main( int argc, char* args[] )
 						quit = true;
 					}
 
-					//Handle input for the dot
-					/*
-						Room for centralized input/event handler. Would handle all inputs? Would also handle all general updates below on line 64
-					*/
+					// Always update input handler for all events
 					inputHandler.handleInput(e);
-				}
 
-				//Move the dot
-				player.handleEvent(inputHandler);
-				player.update(inputHandler);
-
-				//Clear screen
-				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-				SDL_RenderClear( gRenderer );
-
-				//Render objects
-				player.render();
-				
-				// Render platforms
-				SDL_SetRenderDrawColor(gRenderer, 0x80, 0x80, 0x80, 0xFF); // Gray color
-				for (const Platform& platform : Entity::getPlatforms()) {
-					SDL_Rect platformRect = {platform.x, platform.y, platform.width, platform.height};
-					SDL_RenderFillRect(gRenderer, &platformRect);
-				}
-				
-				// Render targets
-				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF); // Red color
-				for (const Target& target : Entity::getTargets()) {
-					if (target.active) {
-						SDL_Rect targetRect = {target.x, target.y, target.width, target.height};
-						SDL_RenderFillRect(gRenderer, &targetRect);
+					// Menu-specific input
+					if (gameState.isInMenu()) {
+						menu.handleInput(e, gameState);
 					}
 				}
 
-				//Update screen
-				SDL_RenderPresent( gRenderer );
+				// Handle controller input for menu (outside of event loop for continuous input)
+				if (gameState.isInMenu()) {
+					menu.handleControllerInput(inputHandler, gameState);
+				}
+
+				// Check for pause button (escape key or controller start button)
+				if (gameState.isInGameplay()) {
+					bool pausePressed = inputHandler.isKeyPressed(SDLK_ESCAPE);
+					
+					// Check controller start button directly
+					if (inputHandler.isControllerConnected()) {
+						bool startButtonPressed = inputHandler.getControllerHandler().isButtonPressed(6);
+						if (startButtonPressed) {
+							printf("Start button pressed! Opening menu...\n");
+						}
+						pausePressed = pausePressed || startButtonPressed;
+					}
+					
+					if (pausePressed) {
+						gameState.toggleMenu();
+					}
+				}
+
+				//Update game based on current state
+				if (gameState.isInMenu()) {
+					menu.render();
+				} else {
+					//Clear screen
+					SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+					SDL_RenderClear( gRenderer );
+
+					//Update and render appropriate player
+					if (gameState.getState() == GameState::COMPLEX_PLAYER) {
+						complexPlayer.handleEvent(inputHandler);
+						complexPlayer.update(inputHandler);
+						complexPlayer.render();
+					} else if (gameState.getState() == GameState::SIMPLE_PLAYER) {
+						simplePlayer.handleEvent(inputHandler);
+						simplePlayer.update(inputHandler);
+						simplePlayer.render();
+					}
+					
+					// Render platforms
+					SDL_SetRenderDrawColor(gRenderer, 0x80, 0x80, 0x80, 0xFF); // Gray color
+					for (const Platform& platform : PlatformManager::getPlatforms()) {
+						SDL_Rect platformRect = {platform.x, platform.y, platform.width, platform.height};
+						SDL_RenderFillRect(gRenderer, &platformRect);
+					}
+					
+					// Render targets
+					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF); // Red color
+					for (const Target& target : TargetManager::getTargets()) {
+						if (target.active) {
+							SDL_Rect targetRect = {target.x, target.y, target.width, target.height};
+							SDL_RenderFillRect(gRenderer, &targetRect);
+						}
+					}
+
+					//Update screen
+					SDL_RenderPresent( gRenderer );
+				}
 
 				int frameTicks = capTimer.getTicks();
 				if( frameTicks < SCREEN_TICK_PER_FRAME )
