@@ -27,7 +27,7 @@ protected:
 public:
     void render();
     void handleEvent( SDL_Event& e );
-    void update();
+    virtual void update();
 
 private:
     int lastPosX, lastPosY, lastVelX, lastVelY;

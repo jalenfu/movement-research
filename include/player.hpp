@@ -9,10 +9,39 @@ public:
     Player();
     ~Player();
 
-    void handleEvent( InputHandler& k );
+    void handleEvent( InputHandler& inputHandler );
+    
+    // New methods for analog input support
+    void setAnalogInput(double leftStickX, double leftStickY);
+    void setAnalogSensitivity(double sensitivity) { analogSensitivity = sensitivity; }
+    double getAnalogSensitivity() const { return analogSensitivity; }
+    
+    // Jump state management
+    void resetJumpStates();
+
 private:
     bool facingRight;
     std::unordered_map<SDL_KeyCode, bool> wasKeyPressed;
+    
+    // Jump state tracking
+    bool canJump;
+    bool canDoubleJump;
+    bool wasJumpPressed;
+    bool isJumpHeld;
+    bool canFastFall;
+    
+    // Jumpsquat and jump timing
+    bool inJumpsquat;
+    int jumpsquatFrames;
+    int jumpsquatDuration;
+    int jumpHoldFrames;
+    int shortHopThreshold;
+    int fullHopThreshold;
+    
+    // Analog input support
+    double analogSensitivity;
+    double currentAnalogX;
+    double currentAnalogY;
 };
 
 /*

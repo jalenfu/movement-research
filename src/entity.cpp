@@ -49,21 +49,6 @@ void Entity::update()
         velX = 0; // Stop horizontal movement
     }
 
-    // Check if on ground (at bottom of screen)
-    bool onGround = (posY + height >= SCREEN_HEIGHT);
-
-    // Only apply gravity if not on ground
-    if (!onGround)
-    {
-        velY += gravity;
-    }
-    else
-    {
-        accelY = 0; // Reset vertical acceleration when on ground
-    }
-
-    velY += accelY;
-
     // Update vertical position
     posY += velY;
 
@@ -80,14 +65,20 @@ void Entity::update()
         accelY = 0; // Reset acceleration when on ground
     }
 
-    if (posX != lastPosX || posY != lastPosY)
+    // Check if on ground (at bottom of screen) - AFTER position update
+    bool onGround = (posY + height >= SCREEN_HEIGHT);
+
+    // Only apply gravity if not on ground
+    if (!onGround)
     {
-        std::cout << "Position: " << posX << " " << posY << std::endl;
+        velY += gravity;
     }
-    if (velX != lastVelX || velY != lastVelY)
+    else
     {
-        std::cout << "Velocity: " << velX << " " << velY << std::endl;
+        accelY = 0; // Reset vertical acceleration when on ground
     }
+
+    velY += accelY;
 
     lastPosX = posX;
     lastPosY = posY;
