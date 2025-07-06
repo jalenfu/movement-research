@@ -43,10 +43,6 @@ private:
     double gravity, friction;
     bool velocityClampingEnabled;
     
-    // Direction
-    bool facingRight;
-    std::unordered_map<SDL_KeyCode, bool> wasKeyPressed;
-    
     // Jump state tracking
     bool canJump;
     bool canDoubleJump;
@@ -79,7 +75,6 @@ private:
     
     // Platform state
     bool onPlatform;
-    int currentPlatform;
     bool standingOnPlatform;
     
     // Texture
