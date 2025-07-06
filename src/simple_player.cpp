@@ -2,14 +2,11 @@
 #include "library.hpp"
 #include <cmath>
 
-SimplePlayer::SimplePlayer()
+SimplePlayer::SimplePlayer() : Player()
 {
-    posX = 0;
-    posY = 300;
-    lastPosX = posX;
-    lastPosY = posY;
-
+    // Override gravity for SimplePlayer
     gravity = 0.6;
+    
     moveSpeed = 8.0;        // Constant horizontal speed
     jumpSpeed = -12.0;      // Initial jump velocity
     doubleJumpSpeed = -8.0; // Double jump velocity (shorter than regular jump)
@@ -33,27 +30,17 @@ SimplePlayer::SimplePlayer()
     wallJumpBufferFrames = 5; // 5 frames buffer after leaving wall
     wallJumpBufferTimer = 0;
     
-    velX = 0;
-    velY = 0;
-    width = 20;
-    height = 20;
-
-    onGround = false;
-    onPlatform = false;
-    standingOnPlatform = false;
     inDash = false;
     canDoubleJump = false;  // Start without double jump
     dashFrames = 0;
     dashCooldownFrames = 0;
     wasJumpPressed = false;
     wasDashPressed = false;
-    
-    texture.loadFromFile( "src/dot.bmp" );
 }
 
 SimplePlayer::~SimplePlayer()
 {
-    texture.free();
+    // Base class destructor handles texture cleanup
 }
 
 bool SimplePlayer::canWallJumpNow() const
@@ -233,7 +220,7 @@ void SimplePlayer::update(InputHandler& inputHandler)
     posX += velX;
     posY += velY;
 
-    // Handle horizontal boundary collisions (walls)
+    // Handle horizontal boundary collisions (walls) with wall jump logic
     bool wasTouchingWall = touchingWall;
     touchingLeftWall = false;
     touchingRightWall = false;
@@ -286,52 +273,12 @@ void SimplePlayer::update(InputHandler& inputHandler)
         canWallJump = true;  // Reset wall jump on ground
     }
 
-    // Check platform collisions with pass-through logic
-    bool holdingDown = false;
+    // Use base class platform collision handling
+    handlePlatformCollisions(inputHandler);
     
-    // Check digital inputs for down
-    for (Input i : inputHandler.getInputs()) {
-        if (i == down) {
-            holdingDown = true;
-            break;
-        }
-    }
-    
-    // Check analog input for down
-    if (inputHandler.isControllerConnected() && inputHandler.getLeftStickY() > 0.5) {
-        holdingDown = true;
-    }
-    
-    // Use the same platform collision system as ComplexPlayer
-    onPlatform = PlatformManager::checkPlatformCollisionWithPrevious(posX, posY, lastPosX, lastPosY, width, height, velY, holdingDown);
-    standingOnPlatform = PlatformManager::isOnPlatform(posX, posY, width, height, velY, holdingDown);
-    
-    // Handle platform landing - place player exactly on platform
+    // Handle platform landing - reset wall jump
     if (onPlatform && velY > 0) // Landing on platform
     {
-        // Find the platform we're landing on and place player on it
-        for (const Platform& platform : PlatformManager::getPlatforms())
-        {
-            if (posX + width > platform.x && 
-                posX < platform.x + platform.width)
-            {
-                // Check if we're currently on the platform surface
-                if (posY + height >= platform.y && 
-                    posY + height <= platform.y + 2)
-                {
-                    posY = platform.y - height; // Place exactly on platform
-                    break;
-                }
-                // Check if we tunneled through the platform
-                else if (lastPosY + height < platform.y && 
-                         posY + height > platform.y)
-                {
-                    posY = platform.y - height; // Place exactly on platform
-                    break;
-                }
-            }
-        }
-        velY = 0; // Stop downward movement
         canWallJump = true;  // Reset wall jump on platform
     }
 
@@ -348,31 +295,7 @@ void SimplePlayer::update(InputHandler& inputHandler)
     handleTargetCollision();
     
     // Update last position for next frame
-    lastPosX = posX;
-    lastPosY = posY;
+    updateLastPosition();
 }
 
-bool SimplePlayer::checkPlatformCollision()
-{
-    return onPlatform;
-}
-
-bool SimplePlayer::isOnGroundOrPlatform() const
-{
-    return onGround || onPlatform;
-}
-
-bool SimplePlayer::checkTargetCollision()
-{
-    return TargetManager::checkTargetCollision(posX, posY, width, height);
-}
-
-void SimplePlayer::handleTargetCollision()
-{
-    TargetManager::handleTargetCollision(posX, posY, width, height);
-}
-
-void SimplePlayer::render()
-{
-    texture.render(posX, posY);
-} 
+ 
