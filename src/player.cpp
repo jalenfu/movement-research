@@ -44,10 +44,23 @@ Player::Player()
     shortHopThreshold = 2;  // 2 frames or less for short hop
     fullHopThreshold = 3;   // 3 frames for full hop (all jumpsquat frames)
     
+    // Initialize dash state
+    inDash = false;
+    dashFrames = 0;
+    dashDuration = 8;  // 8 frames of dash (about 133ms at 60fps)
+    dashVelocityX = 0.0;
+    dashVelocityY = 0.0;
+    canDash = true;
+    hasAirDash = true;
+    wasDashPressed = false;
+    
     // Initialize analog input support
     analogSensitivity = 2.0;
     currentAnalogX = 0.0;
     currentAnalogY = 0.0;
+    
+    // Initialize velocity clamping (enabled by default)
+    setVelocityClamping(true);
 }
 
 Player::~Player()
@@ -125,39 +138,68 @@ void Player::handleEvent(InputHandler& inputHandler)
             inputDown = true;
             break;
         case shift:
-            // 8-directional dash based on input direction
-            if (inputUp && inputLeft) {
-                // Up-left dash
-                velX = -10;
-                velY = -10;
-            } else if (inputUp && inputRight) {
-                // Up-right dash
-                velX = 10;
-                velY = -10;
-            } else if (inputDown && inputLeft) {
-                // Down-left dash
-                velX = -10;
-                velY = 10;
-            } else if (inputDown && inputRight) {
-                // Down-right dash
-                velX = 10;
-                velY = 10;
-            } else if (inputUp) {
-                // Up dash
-                velY = -10;
-            } else if (inputDown) {
-                // Down dash
-                velY = 10;
-            } else if (inputLeft) {
-                // Left dash
-                velX = -10;
-            } else if (inputRight) {
-                // Right dash
-                velX = 10;
-            } else {
-                // Default dash in facing direction
-                velX = (facingRight ? 10 : -10);
+            // 8-directional dash based on input direction - Celeste style
+            if (!wasDashPressed && canDash) // Only dash on initial press, not hold
+            {
+                bool onGround = (posY + height >= SCREEN_HEIGHT);
+                
+                if (onGround || hasAirDash) // Can dash on ground or if air dash available
+                {
+                    if (inputUp && inputLeft) {
+                        // Up-left dash
+                        dashVelocityX = -14.0;  // Stronger horizontal
+                        dashVelocityY = -8.0;   // Weaker vertical
+                    } else if (inputUp && inputRight) {
+                        // Up-right dash
+                        dashVelocityX = 14.0;   // Stronger horizontal
+                        dashVelocityY = -8.0;   // Weaker vertical
+                    } else if (inputDown && inputLeft) {
+                        // Down-left dash
+                        dashVelocityX = -14.0;  // Stronger horizontal
+                        dashVelocityY = 8.0;    // Weaker vertical
+                    } else if (inputDown && inputRight) {
+                        // Down-right dash
+                        dashVelocityX = 14.0;   // Stronger horizontal
+                        dashVelocityY = 8.0;    // Weaker vertical
+                    } else if (inputUp) {
+                        // Up dash
+                        dashVelocityX = 0.0;
+                        dashVelocityY = -8.0;   // Weaker vertical
+                    } else if (inputDown) {
+                        // Down dash
+                        dashVelocityX = 0.0;
+                        dashVelocityY = 8.0;    // Weaker vertical
+                    } else if (inputLeft) {
+                        // Left dash
+                        dashVelocityX = -14.0;  // Stronger horizontal
+                        dashVelocityY = 0.0;
+                    } else if (inputRight) {
+                        // Right dash
+                        dashVelocityX = 14.0;   // Stronger horizontal
+                        dashVelocityY = 0.0;
+                    } else {
+                        // Default dash in facing direction
+                        dashVelocityX = (facingRight ? 14.0 : -14.0);  // Stronger horizontal
+                        dashVelocityY = 0.0;
+                    }
+                    
+                    // Start dash state
+                    inDash = true;
+                    dashFrames = 0;
+                    
+                    // Disable velocity clamping during dash
+                    setVelocityClamping(false);
+                    
+                    // Use air dash if in air
+                    if (!onGround) {
+                        hasAirDash = false;
+                        printf("Air dash used - velocity: (%.1f, %.1f)\n", dashVelocityX, dashVelocityY);
+                    } else {
+                        printf("Ground dash - velocity: (%.1f, %.1f)\n", dashVelocityX, dashVelocityY);
+                    }
+                }
             }
+            wasDashPressed = true;
             break;
         default:
             break;
@@ -167,6 +209,11 @@ void Player::handleEvent(InputHandler& inputHandler)
     // Reset jump press state if jump button is not pressed
     if (!inputUp) {
         wasJumpPressed = false;
+    }
+    
+    // Reset dash press state if dash button is not pressed
+    if (!inputHandler.getInputs().count(shift)) {
+        wasDashPressed = false;
     }
     
     // Handle analog input for more precise control
@@ -245,6 +292,13 @@ void Player::resetJumpStates()
         jumpsquatFrames = 0;
         jumpHoldFrames = 0;
         canFastFall = false;
+        // Reset dash state when on ground
+        inDash = false;
+        dashFrames = 0;
+        canDash = true;  // Can dash again on ground
+        hasAirDash = true;  // Restore air dash
+        // Ensure velocity clamping is enabled when not dashing
+        setVelocityClamping(true);
         printf("Just landed - reset jump states - canJump: %d, canDoubleJump: %d\n", canJump, canDoubleJump);
     }
     else if (!onGround && wasOnGround) // Just left ground
@@ -297,6 +351,38 @@ void Player::resetJumpStates()
             jumpsquatFrames = 0;
             jumpHoldFrames = 0;
             printf("Jump executed: %s (strength: %.1f)\n", jumpType, jumpStrength);
+        }
+    }
+    
+    // Handle dash state
+    if (inDash)
+    {
+        dashFrames++;
+        
+        // Set velocity during dash
+        velX = dashVelocityX;
+        velY = dashVelocityY;
+        
+        printf("Dash frame: %d/%d, velocity: (%.1f, %.1f)\n", dashFrames, dashDuration, velX, velY);
+        
+        // End dash after duration
+        if (dashFrames >= dashDuration)
+        {
+            // Keep the final velocity (Celeste style)
+            // Don't reset velX and velY - let them persist
+            inDash = false;
+            dashFrames = 0;
+            
+            // Re-enable velocity clamping after dash
+            setVelocityClamping(true);
+            
+            // If in air, prevent further dashing until landing
+            bool onGround = (posY + height >= SCREEN_HEIGHT);
+            if (!onGround) {
+                canDash = false;  // Can't dash again until landing
+            }
+            
+            printf("Dash ended - final velocity: (%.1f, %.1f)\n", velX, velY);
         }
     }
 }

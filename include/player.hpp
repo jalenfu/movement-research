@@ -38,6 +38,16 @@ private:
     int shortHopThreshold;
     int fullHopThreshold;
     
+    // Dash state
+    bool inDash;
+    int dashFrames;
+    int dashDuration;
+    double dashVelocityX;
+    double dashVelocityY;
+    bool canDash;
+    bool hasAirDash;
+    bool wasDashPressed;
+    
     // Analog input support
     double analogSensitivity;
     double currentAnalogX;
